@@ -10,8 +10,9 @@ WARN_COLOR=\x1b[33;01m
 
 
 all: $(LINK_DIR)/cloud2Bag $(LINK_DIR)/evalHybrid $(LINK_DIR)/findCloud $(LINK_DIR)/findPath $(LINK_DIR)/mpi_lda $(LINK_DIR)/view_model.py
-	@echo -e "${WARN_COLOR}WARNING: RUN THE FOLLOWING COMMAND${NO_COLOR}"
-	@echo -e "${WARN_COLOR}echo 'export MOLIERE_HOME=$(PWD)' >> ~/.bashrc${NO_COLOR}"
+	@echo -e "${WARN_COLOR}Add the following to your bashrc:${NO_COLOR}"
+	@echo -e "${WARN_COLOR}\"export MOLIERE_HOME=$(PWD)\"${NO_COLOR}"
+	@echo -e "${WARN_COLOR}Look in the README to get data!${NO_COLOR}"
 
 $(LINK_DIR)/cloud2Bag: $(SUB_PROJ_DIR)/cloud2Bag/main.cpp
 	$(CC) $< $(CPPFLAGS) -o $@

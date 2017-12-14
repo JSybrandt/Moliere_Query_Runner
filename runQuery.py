@@ -1,4 +1,4 @@
-#!/software/python/3.4/bin/python
+#!/usr/bin/env python3
 import argparse
 import os
 import sys

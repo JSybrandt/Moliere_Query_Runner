@@ -1,37 +1,58 @@
 CC=g++
-CPPFLAGS=-O3 -fopenmp -Wall -I./src/sharedHeaders
 
-LINK_DIR=./src/links
-SUB_PROJ_DIR=./src/subprojects
+NETWORKIT=./external/networkit
+
+INCLUDE_PATHS=-I$(NETWORKIT)/include
+INCLUDE_PATHS+=-I./src/sharedHeaders
+LINK_PATHS=-L$(NETWORKIT)
+LIB=-lNetworKit -fopenmp
+CPPV=-std=c++11
+WARN=-Wall
+OPT=-O3
+
+
+L=./links
+S=./src/subprojects
+E=./external
+
 
 NO_COLOR=\x1b[0m
 WARN_COLOR=\x1b[33;01m
 
 
+all: $L/evalHybrid.py $L/cloud2Bag $L/findCloud $L/findPath $L/mpi_lda $L/view_model.py
 
-all: $(LINK_DIR)/cloud2Bag $(LINK_DIR)/evalHybrid $(LINK_DIR)/findCloud $(LINK_DIR)/findPath $(LINK_DIR)/mpi_lda $(LINK_DIR)/view_model.py
-	@echo -e "${WARN_COLOR}WARNING: RUN THE FOLLOWING COMMAND${NO_COLOR}"
-	@echo -e "${WARN_COLOR}echo 'export MOLIERE_HOME=$(PWD)' >> ~/.bashrc${NO_COLOR}"
+$L/cloud2Bag: $S/cloud2Bag/main.cpp
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
 
-$(LINK_DIR)/cloud2Bag: $(SUB_PROJ_DIR)/cloud2Bag/main.cpp
-	$(CC) $< $(CPPFLAGS) -o $@
+$L/findCloud: $S/findCloud/main.cpp $S/findCloud/graph.h
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
 
-$(LINK_DIR)/evalHybrid: $(SUB_PROJ_DIR)/evalHybrid/main.cpp
-	$(CC) $< $(CPPFLAGS) -o $@
+$L/findPath: $S/findPath/main.cpp $S/findPath/graphWithVectorInfo.h
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
 
-$(LINK_DIR)/findCloud: $(SUB_PROJ_DIR)/findCloud/main.cpp $(SUB_PROJ_DIR)/findCloud/graph.h
-	$(CC) $< $(CPPFLAGS) -o $@
+$L/mpi_lda:
+	make -C $E/plda
+	cp $E/plda/mpi_lda $@
 
-$(LINK_DIR)/findPath: $(SUB_PROJ_DIR)/findPath/main.cpp $(SUB_PROJ_DIR)/findPath/graphWithVectorInfo.h
-	$(CC) $< $(CPPFLAGS) -o $@
-
-$(LINK_DIR)/mpi_lda:
-	make -C $(SUB_PROJ_DIR)/plda
-	cp $(SUB_PROJ_DIR)/plda/mpi_lda $@
-
-$(LINK_DIR)/view_model.py: $(SUB_PROJ_DIR)/plda/view_model.py
+$L/view_model.py: $E/plda/view_model.py
 	cp $< $@
 
+$L/evalHybrid.py: $S/eval/evalHybrid.py $L/eval_l2 $L/eval_topic_path $L/eval_tpw $L/eval_twe
+	cp $< $@
+
+$L/eval_l2: $S/eval/l2/main.cpp
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
+
+$L/eval_topic_path: $S/eval/topic_path/main.cpp
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
+
+$L/eval_tpw: $S/eval/tpw/main.cpp
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
+
+$L/eval_twe: $S/eval/twe/main.cpp
+	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
+
 clean:
-	rm $(LINK_DIR)/*
-	make -C $(SUB_PROJ_DIR)/plda clean
+	rm $L/*
+	make -C $E/plda clean

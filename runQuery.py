@@ -1,4 +1,4 @@
-#!/software/python/3.4/bin/python
+#!/usr/bin/eval python3
 import argparse
 import os
 import sys
@@ -12,19 +12,26 @@ FIND_CLOUD = "{}/findCloud"
 CLOUD2BAG = "{}/cloud2Bag"
 PLDA = "{}/mpi_lda"
 VIEW_MODEL = "{}/view_model.py"
-EVAL = "{}/evalHybrid"
-EVAL_PARAM = "0 1.5203 .29332 1.9804 .87312 2.2369 .38104 1.0092"
+
+EVAL_L2 = "{}/eval_l2"
+EVAL_TPW = "{}/eval_tpw"
+EVAL_TWE = "{}/eval_twe"
+EVAL_TOPIC_PATH = "{}/eval_topic_path"
+EVAL_HYBRID = "{}/evalHybrid.py"
 
 
-def createOrRecoverFile(args, extension):
-    path = "{}/{}---{}.{}".format(args.cache,
-                                  args.wordA,
-                                  args.wordB,
-                                  extension)
-    if os.path.isfile(path) and not args.reconstruct:
-        return (path, True)
+def createOrRecoverFile(args, sub_dir, extension):
+    dir_path = "{}/{}".format(args.cache, sub_dir)
+    if not os.path.isdir(dir_path):
+        os.mkdir(dir_path)
+    file_path = "{}/{}---{}.{}".format(dir_path,
+                                       args.wordA,
+                                       args.wordB,
+                                       extension)
+    if os.path.isfile(file_path) and not args.reconstruct:
+        return (file_path, True)
     else:
-        return (path, False)
+        return (file_path, False)
 
 
 def main():
@@ -34,7 +41,7 @@ def main():
         return 1
 
     homePath = os.environ[HOME_ENV]
-    linkPath = "{}/src/links".format(homePath)
+    linkPath = "{}/links".format(homePath)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--cache",
@@ -89,6 +96,8 @@ def main():
     args.wordA = args.wordA.lower()
     args.wordB = args.wordB.lower()
 
+    hadToRebuild = False
+
     # always put then in order
     if args.wordA > args.wordB:
         args.wordB, args.wordA = (args.wordA, args.wordB)
@@ -116,8 +125,11 @@ def main():
             print("Error, failed to find", args.wordB, "in", labelFile)
             return 1
 
-    path_path, reuse = createOrRecoverFile(args, "path")
-    if not reuse:
+    pair = "{}---{}".format(args.wordA, args.wordB)
+
+    path_path, reuse = createOrRecoverFile(args, pair, "path")
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
             print("Running findPath, creating", path_path)
         subprocess.call([
@@ -135,8 +147,9 @@ def main():
     elif args.verbose:
         print("reusing: ", path_path)
 
-    cloud_path, reuse = createOrRecoverFile(args, "cloud")
-    if not reuse:
+    cloud_path, reuse = createOrRecoverFile(args, pair, "cloud")
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
             print("Running path2cloud, creating", cloud_path)
         subprocess.call([
@@ -150,8 +163,9 @@ def main():
     elif args.verbose:
         print("reusing: ", cloud_path)
 
-    bag_path, reuse = createOrRecoverFile(args, "bag")
-    if not reuse:
+    bag_path, reuse = createOrRecoverFile(args, pair, "bag")
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
             print("Running cloud2bag, creating", bag_path)
         subprocess.call([
@@ -166,8 +180,9 @@ def main():
         print("reusing: ", bag_path)
 
     model_ext = "{}.model".format(args.num_topics)
-    model_path, reuse = createOrRecoverFile(args, model_ext)
-    if not reuse:
+    model_path, reuse = createOrRecoverFile(args, pair, model_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
             print("Running plda, creating", model_path)
         nullFile = open("/dev/null", 'w')
@@ -186,8 +201,9 @@ def main():
         print("reusing: ", model_path)
 
     view_ext = "{}.view".format(args.num_topics)
-    view_path, reuse = createOrRecoverFile(args, view_ext)
-    if not reuse:
+    view_path, reuse = createOrRecoverFile(args, pair, view_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
             print("Running make view, creating", view_path)
         with open(view_path, 'w') as view_file:
@@ -198,15 +214,38 @@ def main():
     elif args.verbose:
         print("reusing: ", view_path)
 
-    analysis_ext = "{}.eval".format(args.num_topics)
-    analysis_path, reuse = createOrRecoverFile(args, analysis_ext)
-    if not reuse:
+    # intermediate analysis files
+    eval_dir = "{}/eval".format(pair)
+
+    analysis_ext = "{}.l2.eval".format(args.num_topics)
+    eval_l2_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
         if args.verbose:
-            print("Running analysis, creating", analysis_path)
-        with open(analysis_path, 'w') as analysis_file:
+            print("Running analysis, creating", eval_l2_path)
+        with open(eval_l2_path, 'w') as analysis_file:
             subprocess.call([
-                EVAL.format(linkPath),
-                '-p', EVAL_PARAM,
+                EVAL_L2.format(linkPath),
+                '-m', view_path,
+                '-n', ngramVecs,
+                '-c', umlsVecs,
+                '-p', pmidVecs,
+                '-s', args.wordA,
+                '-t', args.wordB,
+                '-e'
+            ], stdout=analysis_file)
+    elif args.verbose:
+        print("reusing: ", eval_l2_path)
+
+    analysis_ext = "{}.tpw.eval".format(args.num_topics)
+    eval_tpw_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
+        if args.verbose:
+            print("Running analysis, creating", eval_tpw_path)
+        with open(eval_tpw_path, 'w') as analysis_file:
+            subprocess.call([
+                EVAL_TPW.format(linkPath),
                 '-m', view_path,
                 '-n', ngramVecs,
                 '-c', umlsVecs,
@@ -215,15 +254,71 @@ def main():
                 '-t', args.wordB
             ], stdout=analysis_file)
     elif args.verbose:
-        print("reusing: ", analysis_path)
+        print("reusing: ", eval_tpw_path)
+
+    analysis_ext = "{}.twe.eval".format(args.num_topics)
+    eval_twe_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
+        if args.verbose:
+            print("Running analysis, creating", eval_twe_path)
+        with open(eval_twe_path, 'w') as analysis_file:
+            subprocess.call([
+                EVAL_TWE.format(linkPath),
+                '-m', view_path,
+                '-n', ngramVecs,
+                '-c', umlsVecs,
+                '-p', pmidVecs,
+                '-s', args.wordA,
+                '-t', args.wordB
+            ], stdout=analysis_file)
+    elif args.verbose:
+        print("reusing: ", eval_twe_path)
+
+    analysis_ext = "{}.path.eval".format(args.num_topics)
+    eval_topic_path_path, reuse = createOrRecoverFile(args,
+                                                      eval_dir,
+                                                      analysis_ext)
+    if not reuse or hadToRebuild:
+        hadToRebuild = True
+        if args.verbose:
+            print("Running analysis, creating", eval_topic_path_path)
+        with open(eval_topic_path_path, 'w') as analysis_file:
+            subprocess.call([
+                EVAL_TOPIC_PATH.format(linkPath),
+                '-m', view_path,
+                '-n', ngramVecs,
+                '-c', umlsVecs,
+                '-p', pmidVecs,
+                '-s', args.wordA,
+                '-t', args.wordB
+            ], stdout=analysis_file, stderr=subprocess.DEVNULL)
+    elif args.verbose:
+        print("reusing: ", eval_topic_path_path)
+
+    analysis_ext = "{}.hybrid.eval".format(args.num_topics)
+    eval_hybrid_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
+    if not reuse or hadToRebuild:
+        if args.verbose:
+            print("Running analysis, creating", eval_hybrid_path)
+        with open(eval_hybrid_path, 'w') as analysis_file:
+            subprocess.call([
+                EVAL_HYBRID.format(linkPath),
+                eval_l2_path,
+                eval_tpw_path,
+                eval_twe_path,
+                eval_topic_path_path
+            ], stdout=analysis_file)
+    elif args.verbose:
+        print("reusing: ", eval_hybrid_path)
 
     if args.move_here:
         if args.verbose:
             print("Moving", view_path, " to local dir")
         subprocess.call(['cp', view_path, './'])
         if args.verbose:
-            print("Moving", analysis_path, " to local dir")
-        subprocess.call(['cp', analysis_path, './'])
+            print("Moving", eval_hybrid_path, " to local dir")
+        subprocess.call(['cp', eval_hybrid_path, './'])
 
 
 if __name__ == "__main__":

@@ -66,6 +66,8 @@ void fastLoadAbtract2Bow(const string& abstractPath,
 
   vector<size_t> fileStarts;
 
+  unsigned int totalLines;
+
 #pragma omp parallel
   {
     unsigned int tid = omp_get_thread_num();
@@ -97,8 +99,10 @@ void fastLoadAbtract2Bow(const string& abstractPath,
     list<pair<string, string>> localAb2Bow;
 
     // while we are still inside our own section
+    unsigned int numLines = 0;
     while(localAbFile.tellg() < fileStarts[tid+1] && localAbFile){
       getline(localAbFile, localLine);
+      numLines += 1;
 
       unsigned int space = localLine.find(' ');
       string pmid = localLine.substr(0, space);

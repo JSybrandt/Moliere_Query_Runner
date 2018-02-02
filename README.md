@@ -9,6 +9,8 @@ This repo stores a polished subset of the main MOLIERE code, and provides a simp
  - python 3
  - _preferred:_  some sort of parallel file system
 
+To run on Palmetto simply use `module load gcc mpich python`.
+
 ## Install Process
 
 The install process is pretty informal.

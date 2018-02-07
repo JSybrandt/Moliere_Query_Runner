@@ -53,12 +53,16 @@ def main():
                         action="store",
                         dest="data_home",
                         default="{}/data".format(homePath),
-                        help="specifies an anternate data directory")
+                        help="specifies an alternate data directory")
     parser.add_argument("-n", "--num_topics",
                         action="store",
                         dest="num_topics",
                         default="100",
                         help="specifies the number of topics to generate.")
+    parser.add_argument("-!", "--no_analysis",
+                        action="store_true",
+                        dest="no_analysis",
+                        help="If set, don't create any analysis files.")
     parser.add_argument("-e", "--ellipse_constant",
                         action="store",
                         dest="ellipse_constant",
@@ -179,10 +183,14 @@ def main():
     elif args.verbose:
         print("reusing: ", bag_path)
 
-    model_ext = "{}.model".format(args.num_topics)
-    model_path, reuse = createOrRecoverFile(args, pair, model_ext)
+    view_ext = "{}.view".format(args.num_topics)
+    view_path, reuse = createOrRecoverFile(args, pair, view_ext)
     if not reuse or hadToRebuild:
         hadToRebuild = True
+
+        # building the view requires the model
+        model_ext = "{}.model".format(args.num_topics)
+        model_path, reuse = createOrRecoverFile(args, pair, model_ext)
         if args.verbose:
             print("Running plda, creating", model_path)
         nullFile = open("/dev/null", 'w')
@@ -197,13 +205,7 @@ def main():
             '--burn_in_iterations', '50'
         ], stdout=nullFile)
         nullFile.close()
-    elif args.verbose:
-        print("reusing: ", model_path)
 
-    view_ext = "{}.view".format(args.num_topics)
-    view_path, reuse = createOrRecoverFile(args, pair, view_ext)
-    if not reuse or hadToRebuild:
-        hadToRebuild = True
         if args.verbose:
             print("Running make view, creating", view_path)
         with open(view_path, 'w') as view_file:
@@ -211,8 +213,21 @@ def main():
                 VIEW_MODEL.format(linkPath),
                 model_path
             ], stdout=view_file)
+
+        # cleanup, this file is big and we don't need it
+        os.remove(model_path)
     elif args.verbose:
         print("reusing: ", view_path)
+
+    if args.move_here:
+        if args.verbose:
+            print("Moving", view_path, " to local dir")
+        subprocess.call(['cp', view_path, './'])
+
+    if args.no_analysis:
+        if args.verbose:
+            print("Skipping Analysis")
+        return
 
     # intermediate analysis files
     eval_dir = "{}/eval".format(pair)
@@ -313,9 +328,6 @@ def main():
         print("reusing: ", eval_hybrid_path)
 
     if args.move_here:
-        if args.verbose:
-            print("Moving", view_path, " to local dir")
-        subprocess.call(['cp', view_path, './'])
         if args.verbose:
             print("Moving", eval_hybrid_path, " to local dir")
         subprocess.call(['cp', eval_hybrid_path, './'])

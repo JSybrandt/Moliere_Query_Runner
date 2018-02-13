@@ -234,8 +234,12 @@ private:
 };
 
 template<class T, class K>
-bool cmpRev(const pair<T,K>& a, const pair<T,K>& b){
+bool cmpPairRev(const pair<T,K>& a, const pair<T,K>& b){
   return a.first > b.first;
+}
+template<class T, class K>
+bool cmpPair(const pair<T,K>& a, const pair<T,K>& b){
+  return a.first < b.first;
 }
 
 

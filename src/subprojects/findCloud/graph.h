@@ -14,6 +14,7 @@
 #include<cstring>
 #include<exception>
 #include<stack>
+#include<list>
 
 #include"pQueue.h"
 #include"util.h"
@@ -33,6 +34,8 @@ public:
     while(lFile >> token){
       if(token[0] == 'P')
         abstractIdx.insert(count);
+      else if(token[0] == 'C')
+        umlsIdx.insert(count);
       ++count;
     }
   }
@@ -55,6 +58,26 @@ public:
     addEdge(e.a, e.b, e.weight);
   }
 
+  unordered_set<nodeIdx> getCloud(nodeIdx source, unsigned int maxResult){
+    typedef pair<nodeIdx, float> halfEdge;
+    pQueue<nodeIdx, float> pq;
+    unordered_set<nodeIdx> visited, abstracts(maxResult);
+    pq.push(source, 0);
+    visited.insert(source);
+    if(isAbstract(source)) abstracts.insert(source);
+    while(!pq.empty() && abstracts.size() < maxResult){
+      halfEdge cEdge = pq.pop();
+      visited.insert(cEdge.first);
+      if(isAbstract(cEdge.first)) abstracts.insert(cEdge.first);
+      for(const halfEdge& nEdge : data.at(cEdge.first)){
+        if(visited.find(nEdge.first) == visited.end())
+          pq.push(nEdge.first, cEdge.second + nEdge.second);
+      }
+    }
+    return abstracts;
+  }
+
+  // DEPRICATED
   unordered_set<nodeIdx> getCloud(const vector<nodeIdx> path, unsigned int cloudSetN, unsigned int cloudSetC, unsigned int cloudSetK){
     unordered_set<nodeIdx> res;
     for(unsigned int i = 0; i < path.size(); ++i){
@@ -80,9 +103,21 @@ public:
 
       } else { // get cloud set K
 
+        // check set is either all the synonyms for a umls term, or the keyword itself
+        list<nodeIdx> checkSet;
+        if(isUmls(currNode)){
+          for(pair<nodeIdx, float> e : data[currNode]){
+            if(isKeyword(e.first)) checkSet.push_back(e.first);
+          }
+        } else {
+          checkSet.push_back(currNode);
+        }
+
         pQueue<nodeIdx, float> pQ;
-        for(pair<nodeIdx, float> e : data[currNode]){
-          if(isAbstract(e.first)) pQ.push(e.first, e.second);
+        for(nodeIdx c : checkSet){
+          for(pair<nodeIdx, float> e : data[c]){
+            if(isAbstract(e.first)) pQ.push(e.first, e.second);
+          }
         }
         unsigned int addCount = 0;
         while(!pQ.empty() && addCount < cloudSetK){
@@ -94,8 +129,8 @@ public:
       //if there are two adjacent keywords
       // get cloud set C
       if(i+1 < path.size() &&
-          !isAbstract(currNode) &&
-          !isAbstract(path[i+1])){
+          !isKeyword(currNode) &&
+          !isKeyword(path[i+1])){
 
         nodeIdx nextNode = path[i+1];
         pQueue<nodeIdx, float> pQ;
@@ -118,12 +153,18 @@ public:
 
 private:
 
-  unordered_set<nodeIdx> abstractIdx;
+  unordered_set<nodeIdx> abstractIdx, umlsIdx;
   unordered_map<nodeIdx, unordered_map<nodeIdx, float>> data;
   unsigned long long edgeCount;
 
   bool isAbstract(nodeIdx n){
     return abstractIdx.find(n) != abstractIdx.end();
+  }
+  bool isUmls(nodeIdx n){
+    return umlsIdx.find(n) != umlsIdx.end();
+  }
+  bool isKeyword(nodeIdx n){
+    return not (isAbstract(n) || isUmls(n));
   }
 };
   //unordered_set<nodeIdx> getAbstractCloud(const path& p, unsigned int size) const{

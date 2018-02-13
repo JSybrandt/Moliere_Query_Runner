@@ -20,6 +20,7 @@
 #include"cmdln.h"
 #include"graphWithVectorInfo.h"
 #include"parallelEdgeListLoad.h"
+#include"parallelAbstractLoad.h"
 #include"util.h"
 
 #include<omp.h>
@@ -139,12 +140,14 @@ int main (int argc, char** argv){
   float elipseConst;
 
   unordered_map<string, nodeIdx> label2idx;
+  vector<string> labels;
   if(::verbose) cout << "Loading Labels:" << endl;
   nodeIdx count = 0;
   fstream fin(labelPath, ios::in);
   string token;
   while(fin >> token){
     label2idx[token] = count;
+    labels.push_back(token);
     ++count;
   }
 
@@ -192,10 +195,11 @@ int main (int argc, char** argv){
         vector<float> pt;
         string label;
         string2vec(line, label, pt);
-        if(isInElipse(sourceVec, targetVec, elipseConst, pt)){
-          nodeIdx idx = label2idx[label];
+        if(stopwords.find(label) == stopwords.end() &&
+           isInElipse(sourceVec, targetVec, elipseConst, pt)){
 #pragma omp critical
           {
+            nodeIdx idx = label2idx[label];
             subsetVectors[idx] = pt;
             if(verbose) cout << "In Ellipse: " << label << " : " << idx << endl;
           }
@@ -235,7 +239,7 @@ int main (int argc, char** argv){
   if(::verbose){
     cout << "Path:";
     for(nodeIdx n : path)
-      cout << n << " ";
+      cout << labels[n] << " ";
     cout << endl;
   }
 

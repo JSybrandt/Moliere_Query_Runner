@@ -27,6 +27,22 @@ bool verbose = false;
 
 using namespace std;
 
+unsigned int loadAnotherOrderNeighbors(const string& path,
+                                       list<edge>& edges,
+                                       unordered_set<nodeIdx> allNodes){
+  static unsigned int order = 0;
+  order += 1;
+
+  vout << "Loading " << order << "-order neighbors from " << path << endl;
+  fastLoadEdgeList(path, edges, allNodes);
+
+  for(const edge& e : edges){
+    allNodes.insert(e.a);
+    allNodes.insert(e.b);
+  }
+  return order;
+}
+
 
 int main (int argc, char** argv){
 
@@ -36,9 +52,8 @@ int main (int argc, char** argv){
   p.add<string>("pathFile", 'p', "input path file (idx)", true);
   p.add<string>("outputFile", 'o', "Output paths and neighborhoods", true);
   p.add<string>("labelFile", 'l', "Label file accompanying the edges file.", true);
-  p.add<unsigned int>("cloudSetN", 'N', "abstract cloud param: number of new abstracts adjacent to those on path.", false, 2000);
-  p.add<unsigned int>("cloudSetC", 'C', "abstract cloud param: number of new abstracts from keyword overlap", false, 500);
-  p.add<unsigned int>("cloudSetK", 'K', "abstract cloud param: number of new abstracts from keywords", false, 500);
+  p.add<unsigned int>("numAbstractsPerNode", 'A', "The cloud will expand until it find this many abstracts per node in path", false, 3000);
+  p.add<unsigned int>("maxDistFromPath", 'n', "max separation from path (hops)", false, 3);
   p.add("verbose", 'v', "outputs debug information");
 
   p.parse_check(argc, argv);
@@ -47,9 +62,8 @@ int main (int argc, char** argv){
   string pathPath =  p.get<string>("pathFile");
   string outputPath =  p.get<string>("outputFile");
   string labelPath =  p.get<string>("labelFile");
-  unsigned int cloudSetN = p.get<unsigned int>("cloudSetN");
-  unsigned int cloudSetC = p.get<unsigned int>("cloudSetC");
-  unsigned int cloudSetK = p.get<unsigned int>("cloudSetK");
+  unsigned int numAbstractsPerNode = p.get<unsigned int>("numAbstractsPerNode");
+  unsigned int maxDistFromPath = p.get<unsigned int>("maxDistFromPath");
   verbose = p.exist("verbose");
 
   vout << "Loading Path" << endl;
@@ -63,43 +77,55 @@ int main (int argc, char** argv){
   }
   pathFile.close();
 
+  unsigned int maxResult = numAbstractsPerNode * path.size();
+  vout << "Expecting a min resulting cloud of size " << maxResult << endl;
+
   // CONSTRUCTING GRAPH
-  vout << "Loading set of abstract nodeidx from " << labelPath << endl;
+  vout << "Loading labels from " << labelPath << endl;
   graph g(labelPath);
+  unordered_set<nodeIdx> cloud;
 
   list<edge> edges;
+  unsigned int cycleCount = 0;
+  bool needMoreNeighbors = false;
 
-  vout << "Loading first-order neighbors from " << graphPath << endl;
-  fastLoadEdgeList(graphPath, edges, allNodes);
+  cycleCount = loadAnotherOrderNeighbors(graphPath, edges, allNodes);
 
-  for(const edge& e : edges){
-    allNodes.insert(e.a);
-    allNodes.insert(e.b);
-  }
+  do{
 
-  edges.clear();
+    edges.clear();
+    cycleCount = loadAnotherOrderNeighbors(graphPath, edges, allNodes);
 
-  vout << "Loading first and second order neighbors from " << graphPath << endl;
-  fastLoadEdgeList(graphPath, edges, allNodes);
+    vout << "constructing graph" << endl;
+    for(const edge& e : edges){
+      g.addEdge(e);
+    }
 
-  vout << "constructing graph" << endl;
-  for(const edge& e : edges){
-    g.addEdge(e);
-  }
+    vout << "Found " << g.numNodes() << " nodes" << endl;
+    vout << "Found " << g.numEdges() << " edges" << endl;
 
-  edges.clear();
+    vout << "Getting cloud" << endl;
+    cloud.clear();
+#pragma omp parallel for schedule(dynamic)
+    for(unsigned int i = 0; i < path.size(); ++i){
+      unordered_set<nodeIdx> local = g.getCloud(path[i], numAbstractsPerNode);
+      vout << "Found " << local.size() << " near " << path[i] << endl;
+#pragma omp critical
+      {
+        if(local.size() < numAbstractsPerNode)
+          needMoreNeighbors = true;
+        cloud.insert(local.begin(), local.end());
+      }
+    }
 
-  vout << "Found " << g.numNodes() << " nodes" << endl;
-  vout << "Found " << g.numEdges() << " edges" << endl;
+    vout << "Found cloud of size " << cloud.size() << endl;
 
+  }while(needMoreNeighbors && cycleCount < maxDistFromPath);
 
   fstream outFile(outputPath, ios::out);
 
-  vout << "Getting cloud" << endl;
-  unordered_set<nodeIdx> neighborhood = g.getCloud(path, cloudSetN, cloudSetC, cloudSetK);
-
   vout << "Writing to file" << endl;
-  for(nodeIdx n : neighborhood)
+  for(nodeIdx n : cloud)
     outFile << n << " ";
   outFile << endl;
 

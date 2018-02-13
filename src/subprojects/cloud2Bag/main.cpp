@@ -65,6 +65,9 @@ int main (int argc, char** argv){
   }
   cloudFile.close();
 
+  if(pmids.size() == 0){
+    throw runtime_error("Failed to load anything from cloud");
+  }
 
   vout << "Loading abstracts in parallel from " << abstractPath << endl;
   vout << "Expecting to find... " << pmids.size() << " pmids" << endl;

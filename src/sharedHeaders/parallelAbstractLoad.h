@@ -39,9 +39,10 @@ unordered_set<string> stopwords {
 "than", "that", "the", "their", "theirs", "them",
 "themselves", "then", "there", "these", "they",
 "this", "those", "through", "to", "too", "until", "up",
-"very", "was", "we", "were", "what", "when", "where",
-"which", "while", "who", "whom", "why", "with",
+"very", "was", "we", "well", "were", "what", "when",
+"where", "which", "while", "who", "whom", "why", "with",
 "would", "you", "your", "yours", "yourself", "yourselves",
+"0","1","2","3","4","5","6","7","8","9",
 };
 
 string abstractLine2Bow(string line){
@@ -94,8 +95,6 @@ void fastLoadAbstract2Bow(const string& abstractPath,
   size_t totalFileSize = st.st_size;
 
   vector<size_t> fileStarts;
-
-  unsigned int totalLines;
 
 #pragma omp parallel
   {

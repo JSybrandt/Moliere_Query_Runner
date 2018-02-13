@@ -178,7 +178,7 @@ int main(int argc, char ** argv){
   for(unsigned int i = 0 ; i < topics.size(); ++i){
       score2topic.push_back(pair<float, unsigned int>(topicScores[i], i));
   }
-  sort(score2topic.begin(), score2topic.end(), cmpRev<float, unsigned int>);
+  sort(score2topic.begin(), score2topic.end(), cmpPairRev<float, unsigned int>);
 
   for(unsigned int i = 0;
       i < min((unsigned int) topics.size(), numReportedTopics);

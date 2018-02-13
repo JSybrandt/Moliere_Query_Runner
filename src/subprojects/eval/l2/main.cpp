@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
     float &score = topicScores[i];
     if(euclidian){
       float dist2Mid = distL2(topicVec, middle);
-      score = max(1 - (dist2Mid / (scoreST/2)), 0.0f);
+      score = 1-dist2Mid/(scoreST/2);
     } else {
       float simSx = cosSim(sourceVec, topicVec);
       float simTx = cosSim(targetVec, topicVec);
@@ -134,11 +134,12 @@ int main(int argc, char ** argv){
        << maxScore << " "
        << minScore;
 
-  vector<pair<float, unsigned int>> score2topic(topics.size());
+  vector<pair<float, unsigned int>> score2topic;
   for(unsigned int i = 0 ; i < topics.size(); ++i){
       score2topic.push_back(pair<float, unsigned int>(topicScores[i], i));
   }
-  sort(score2topic.begin(), score2topic.end(), cmpRev<float, unsigned int>);
+
+  sort(score2topic.begin(), score2topic.end(), cmpPairRev<float, unsigned int>);
 
   for(unsigned int i = 0;
       i < min((unsigned int) topics.size(), numReportedTopics);
@@ -146,7 +147,8 @@ int main(int argc, char ** argv){
   {
     auto& pair = score2topic[i];
     Topic& topic = topics[pair.second];
-    cout << " TOPIC" << pair.second << " " << pair.first;
+    cout << " TOPIC" << pair.second << " "
+         << pair.first;
     for(unsigned int i = 0;
         i < min(topicCutoff, (unsigned int) topic.size());
         ++i){

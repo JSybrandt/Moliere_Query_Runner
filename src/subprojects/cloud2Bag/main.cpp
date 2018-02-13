@@ -69,7 +69,7 @@ int main (int argc, char** argv){
   vout << "Loading abstracts in parallel from " << abstractPath << endl;
   vout << "Expecting to find... " << pmids.size() << " pmids" << endl;
   list<pair<string, string>> pmid2bow;
-  fastLoadAbtract2Bow(abstractPath, pmid2bow, pmids);
+  fastLoadAbstract2Bow(abstractPath, pmid2bow, pmids);
 
   vout << "Found " << pmid2bow.size() << " pmids" << endl;
 

@@ -53,7 +53,7 @@ string getLineFromBinary(fstream& binFile, size_t& byteCount){
   return ss.str();
 }
 
-void fastLoadAbtract2Bow(const string& abstractPath,
+void fastLoadAbstract2Bow(const string& abstractPath,
                          list<pair<string, string>>& result,
                          unordered_set<string> subset = unordered_set<string>()){
 

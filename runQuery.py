@@ -41,7 +41,7 @@ def main():
         return 1
 
     homePath = os.environ[HOME_ENV]
-    linkPath = "{}/links".format(homePath)
+    linkPath = "{}/bin".format(homePath)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--cache",

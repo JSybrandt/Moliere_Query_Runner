@@ -47,9 +47,25 @@ public:
     float w;
   };
 
+  unordered_set<nodeIdx> getNeighbors(nodeIdx source, unsigned int n){
+    unordered_set<nodeIdx> visited;
+    pQueue<nodeIdx, float> pq;
+    pq.push(source, 0);
+    // n+1 so that we don't return source
+    while(!pq.empty() && visited.size() < n+1){
+      halfEdge cEdge = pq.pop();
+      visited.insert(cEdge.first);
+      for(const halfEdge & nEdge : data.at(cEdge.first)){
+        if(visited.find(nEdge.first) == visited.end())
+          pq.push(nEdge.first, cEdge.second + nEdge.second);
+      }
+    }
+    visited.erase(source);
+    return visited;
+  }
+
   Path getShortestPath(nodeIdx source, nodeIdx target) const{
     // first, we are going to tighten edges
-    typedef pair<nodeIdx, float> halfEdge; // half edge only has one node
     pQueue<nodeIdx, float> pq;
     unordered_map<nodeIdx, float> finalDists;
     pq.push(source, 0);
@@ -130,6 +146,7 @@ public:
 
   unsigned int getNodeCount(){return data.size();}
 private:
+  typedef pair<nodeIdx, float> halfEdge; // half edge only has one node
 
   unordered_map<nodeIdx, unordered_map<nodeIdx, float>> data;
   unsigned long long edgeCount;

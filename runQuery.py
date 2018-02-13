@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import psutil
+import re
 
 
 HOME_ENV = "MOLIERE_HOME"
@@ -33,6 +34,16 @@ def createOrRecoverFile(args, sub_dir, extension):
         return (file_path, True)
     else:
         return (file_path, False)
+
+
+def cleanInput(s):
+    # if its a UMLS id
+    if re.match(r'^C[0-9]+$', s):
+        return s
+    # if its a PMID
+    if re.match(r'^PMID[0-9]+$', s):
+        return s
+    return s.lower()
 
 
 def main():
@@ -103,8 +114,8 @@ def main():
     umlsVecs = "{}/fastText/umls.data".format(args.data_home)
     verboseFlag = '-v' if args.verbose else ' '
 
-    args.wordA = args.wordA.lower()
-    args.wordB = args.wordB.lower()
+    args.wordA = cleanInput(args.wordA)
+    args.wordB = cleanInput(args.wordB)
 
 #    args.vector_length = int(args.vector_length)
 

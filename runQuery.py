@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import subprocess
+import psutil
 
 
 HOME_ENV = "MOLIERE_HOME"
@@ -68,6 +69,11 @@ def main():
                         dest="ellipse_constant",
                         default="1.4",
                         help="size of ellipse optimization")
+    # parser.add_argument("-V", "--vector_length",
+                        # action="store",
+                        # dest="vector_length",
+                        # default="500",
+                        # help="size of ellipse optimization")
     parser.add_argument("-m", "--move_here",
                         action="store_true",
                         dest="move_here",
@@ -99,6 +105,8 @@ def main():
 
     args.wordA = args.wordA.lower()
     args.wordB = args.wordB.lower()
+
+#    args.vector_length = int(args.vector_length)
 
     hadToRebuild = False
 
@@ -195,7 +203,8 @@ def main():
             print("Running plda, creating", model_path)
         nullFile = open("/dev/null", 'w')
         subprocess.call([
-            'mpiexec', PLDA.format(linkPath),
+            'mpiexec', '-n', str(psutil.cpu_count()),
+            PLDA.format(linkPath),
             '--num_topics', args.num_topics,
             '--alpha', '1',
             '--beta', '0.01',

@@ -29,7 +29,7 @@ using namespace std;
 
 unsigned int loadAnotherOrderNeighbors(const string& path,
                                        list<edge>& edges,
-                                       unordered_set<nodeIdx> allNodes){
+                                       unordered_set<nodeIdx>& allNodes){
   static unsigned int order = 0;
   order += 1;
 
@@ -53,7 +53,7 @@ int main (int argc, char** argv){
   p.add<string>("outputFile", 'o', "Output paths and neighborhoods", true);
   p.add<string>("labelFile", 'l', "Label file accompanying the edges file.", true);
   p.add<unsigned int>("numAbstractsPerNode", 'A', "The cloud will expand until it find this many abstracts per node in path", false, 3000);
-  p.add<unsigned int>("maxDistFromPath", 'n', "max separation from path (hops)", false, 3);
+  p.add<unsigned int>("maxDistFromPath", 'n', "max separation from path (hops)", false, 4);
   p.add("verbose", 'v', "outputs debug information");
 
   p.parse_check(argc, argv);
@@ -106,6 +106,7 @@ int main (int argc, char** argv){
 
     vout << "Getting cloud" << endl;
     cloud.clear();
+    needMoreNeighbors = false;
 #pragma omp parallel for schedule(dynamic)
     for(unsigned int i = 0; i < path.size(); ++i){
       unordered_set<nodeIdx> local = g.getCloud(path[i], numAbstractsPerNode);
@@ -126,8 +127,7 @@ int main (int argc, char** argv){
 
   vout << "Writing to file" << endl;
   for(nodeIdx n : cloud)
-    outFile << n << " ";
-  outFile << endl;
+    outFile << n << endl;
 
   outFile.close();
   return 0;

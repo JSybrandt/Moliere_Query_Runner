@@ -120,9 +120,9 @@ int main(int argc, char ** argv){
         nkGraph.addNode();
       }
       // add graph to NK representation
-      for(Graph::Edge& e : graph.toEdgeList()){
+      for(edge& e : graph.toEdgeList()){
         if(e.a != e.b){
-          nkGraph.addEdge(e.a, e.b, e.w);
+          nkGraph.addEdge(e.a, e.b, e.weight);
           vout << e << endl;
         }
       }

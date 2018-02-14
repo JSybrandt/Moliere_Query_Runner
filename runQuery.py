@@ -22,6 +22,15 @@ EVAL_TOPIC_PATH = "{}/eval_topic_path"
 EVAL_HYBRID = "{}/evalHybrid.py"
 
 
+def checkFile(path):
+    if not os.path.isfile(path):
+        print("FAILED TO MAKE " + path, file=sys.stderr)
+        raise
+    if os.stat(path).st_size == 0:
+        print("EMPTY: " + path, file=sys.stderr)
+        raise
+
+
 def createOrRecoverFile(args, sub_dir, extension):
     dir_path = "{}/{}".format(args.cache, sub_dir)
     if not os.path.isdir(dir_path):
@@ -30,7 +39,9 @@ def createOrRecoverFile(args, sub_dir, extension):
                                        args.wordA,
                                        args.wordB,
                                        extension)
-    if os.path.isfile(file_path) and not args.reconstruct:
+    if(os.path.isfile(file_path) and
+       os.stat(file_path).st_size > 0 and
+       not args.reconstruct):
         return (file_path, True)
     else:
         return (file_path, False)
@@ -161,6 +172,7 @@ def main():
             '-l', labelFile,
             '-s', args.wordA,
             '-t', args.wordB,
+            '-P', pmidVecs,
             '-V', ngramVecs,
             '-U', umlsVecs,
             '-e', args.ellipse_constant,
@@ -169,6 +181,8 @@ def main():
         ])
     elif args.verbose:
         print("reusing: ", path_path)
+
+    checkFile(path_path)
 
     cloud_path, reuse = createOrRecoverFile(args, pair, "cloud")
     if not reuse or hadToRebuild:
@@ -186,6 +200,8 @@ def main():
     elif args.verbose:
         print("reusing: ", cloud_path)
 
+    checkFile(cloud_path)
+
     bag_path, reuse = createOrRecoverFile(args, pair, "bag")
     if not reuse or hadToRebuild:
         hadToRebuild = True
@@ -201,6 +217,8 @@ def main():
         ])
     elif args.verbose:
         print("reusing: ", bag_path)
+
+    checkFile(bag_path)
 
     view_ext = "{}.view".format(args.num_topics)
     view_path, reuse = createOrRecoverFile(args, pair, view_ext)
@@ -226,6 +244,8 @@ def main():
         ], stdout=nullFile)
         nullFile.close()
 
+        checkFile(model_path)
+
         if args.verbose:
             print("Running make view, creating", view_path)
         with open(view_path, 'w') as view_file:
@@ -234,10 +254,14 @@ def main():
                 model_path
             ], stdout=view_file)
 
+        checkFile(view_path)
+
         # cleanup, this file is big and we don't need it
         os.remove(model_path)
     elif args.verbose:
         print("reusing: ", view_path)
+
+    checkFile(view_path)
 
     if args.move_here:
         if args.verbose:
@@ -272,6 +296,8 @@ def main():
     elif args.verbose:
         print("reusing: ", eval_l2_path)
 
+    checkFile(eval_l2_path)
+
     analysis_ext = "{}.tpw.eval".format(args.num_topics)
     eval_tpw_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
     if not reuse or hadToRebuild:
@@ -291,6 +317,8 @@ def main():
     elif args.verbose:
         print("reusing: ", eval_tpw_path)
 
+    checkFile(eval_tpw_path)
+
     analysis_ext = "{}.twe.eval".format(args.num_topics)
     eval_twe_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
     if not reuse or hadToRebuild:
@@ -309,6 +337,8 @@ def main():
             ], stdout=analysis_file)
     elif args.verbose:
         print("reusing: ", eval_twe_path)
+
+    checkFile(eval_twe_path)
 
     analysis_ext = "{}.path.eval".format(args.num_topics)
     eval_topic_path_path, reuse = createOrRecoverFile(args,
@@ -331,6 +361,8 @@ def main():
     elif args.verbose:
         print("reusing: ", eval_topic_path_path)
 
+    checkFile(eval_topic_path_path)
+
     analysis_ext = "{}.hybrid.eval".format(args.num_topics)
     eval_hybrid_path, reuse = createOrRecoverFile(args, eval_dir, analysis_ext)
     if not reuse or hadToRebuild:
@@ -346,6 +378,8 @@ def main():
             ], stdout=analysis_file)
     elif args.verbose:
         print("reusing: ", eval_hybrid_path)
+
+    checkFile(eval_hybrid_path)
 
     if args.move_here:
         if args.verbose:

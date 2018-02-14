@@ -28,7 +28,7 @@ $B/cloud2Bag: $S/cloud2Bag/main.cpp
 $B/findCloud: $S/findCloud/main.cpp $S/findCloud/graph.h
 	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
 
-$B/findPath: $S/findPath/main.cpp $S/findPath/graphWithVectorInfo.h
+$B/findPath: $S/findPath/main.cpp
 	$(CC) -o $@ $(CPPV) $(WARN) $(OPT) $(INCLUDE_PATHS) $(LINK_PATHS) $< $(LIB)
 
 $B/mpi_lda:

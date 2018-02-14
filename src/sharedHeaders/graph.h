@@ -29,7 +29,7 @@ public:
   unsigned int numEdges() const { return edgeCount;}
   void addEdge(nodeIdx a, nodeIdx b, float weight){
     //if(weight < 0)
-      //throw runtime_error("Invalid Edge");
+      //throw runtime_error("Invalid edge");
     if(a != UNDEFINED && b != UNDEFINED){
       data[a][b] = weight;
       data[b][a] = weight;
@@ -40,11 +40,6 @@ public:
   struct Path{
     vector<nodeIdx> path;
     float weight;
-  };
-
-  struct Edge{
-    nodeIdx a, b;
-    float w;
   };
 
   unordered_set<nodeIdx> getNeighbors(nodeIdx source, unsigned int n){
@@ -127,14 +122,14 @@ public:
     }
   }
 
-  list<Edge> toEdgeList() const{
-    list<Edge> res;
+  list<edge> toEdgeList() const{
+    list<edge> res;
     for(const auto & node2Negh : data){
       const nodeIdx& i = node2Negh.first;
       for(const auto & pair : node2Negh.second){
         if(pair.first > i){
-          Edge e;
-          e.a = i; e.b = pair.first; e.w = pair.second;
+          edge e;
+          e.a = i; e.b = pair.first; e.weight = pair.second;
           res.push_back(e);
         }
       }
@@ -169,7 +164,3 @@ ostream& operator<<(ostream& out, const Graph::Path& p){
   return out;
 }
 
-ostream& operator<<(ostream& out, const Graph::Edge& e){
-  out << e.a << " " << e.b << " " << e.w;
-  return out;
-}

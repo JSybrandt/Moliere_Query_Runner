@@ -29,51 +29,7 @@ void string2vec(const string& line, string& label, vector<float>& vec){
   while(ss >> temp){ vec.push_back(temp);}
 }
 
-// Appends elements from path to res
-void fastLoadVecDir(const string& path, list<pair<string, vector<float>>>& res){
-  vector<string> files = getFileOrFiles(path);
-#pragma omp parallel for schedule(dynamic)
-  for(unsigned int i = 0; i < files.size(); ++i){
-    list<pair<string, vector<float>>> localVecs;
-    string localPath = files[i];
-    fstream localIn(localPath, ios::in);
-    string line;
-    while(getline(localIn, line)){
-      string label;
-      vector<float> vec;
-      string2vec(line, label, vec);
-      localVecs.emplace_back(label, vec);
-    }
-    localIn.close();
-#pragma omp critical
-    res.splice(res.end(), localVecs);
-  }
-}
-
-// Appends elements from path to res
-void fastLoadVecFile(const string& path, unordered_map<string, vector<float>>& res){
-#pragma omp parallel
-  {
-#pragma omp single
-  {
-    fstream fin(path, ios::in);
-    string line;
-    while(getline(fin, line)){
-#pragma omp task firstprivate(line)
-      {
-        vector<float> pt;
-        string label;
-        string2vec(line, label, pt);
-#pragma omp critical
-        res[label] = pt;
-      }
-    }
-  }
-  }
-}
-
-
-void fastLoadVecSubset(const string& vecPath,
+void fastLoadVecs(const string& vecPath,
                        list<pair<string, vector<float>>>& result,
                        const unordered_set<string>& subset = unordered_set<string>()){
 
@@ -142,4 +98,30 @@ void fastLoadVecSubset(const string& vecPath,
 
   }
 
+}
+
+void fastLoadVecs(const string& nGramVecPath,
+                  const string& pmidVecPath,
+                  const string& umlsVecPath,
+                  list<pair<string, vector<float>>>& result,
+                  const unordered_set<string> subset = unordered_set<string>()){
+  unordered_map<string, unordered_set<string>> file2labels;
+  for(const string& lbl : subset){
+    if(lbl[0] == 'C') file2labels[umlsVecPath].insert(lbl);
+    else if(lbl[0] == 'P') file2labels[pmidVecPath].insert(lbl);
+    else file2labels[nGramVecPath].insert(lbl);
+  }
+  //supplied no subset, take all
+  if(file2labels.size() == 0){
+    unordered_set<string> nothing;
+    file2labels[umlsVecPath] = nothing;
+    file2labels[pmidVecPath] = nothing;
+    file2labels[nGramVecPath] = nothing;
+  }
+
+  for(const pair<string, unordered_set<string>> pair : file2labels){
+    const string& filePath = pair.first;
+    const unordered_set<string>& lbls = pair.second;
+    fastLoadVecs(filePath, result, lbls);
+  }
 }

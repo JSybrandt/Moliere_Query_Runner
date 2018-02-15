@@ -215,7 +215,11 @@ int main (int argc, char** argv){
 
   unordered_set<nodeIdx> keys;
   for(const auto & pair : word2vecList){
-    keys.insert(label2idx.at(pair.first));
+    if(label2idx.find(pair.first) != label2idx.end()){
+      keys.insert(label2idx.at(pair.first));
+    } else {
+      vout << "Failed to find vector for:" << pair.first << endl;
+    }
   }
 
   fastLoadEdgeList(graphPath, edges, keys);

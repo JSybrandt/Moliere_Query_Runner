@@ -95,3 +95,19 @@ void fastLoadEdgeList(const string& graphPath, // file path
 
   }
 }
+
+
+unsigned int loadAnotherOrderNeighbors(const string& path,
+                                       list<edge>& edges,
+                                       unordered_set<nodeIdx>& allNodes){
+  static unsigned int order = 0;
+  order += 1;
+
+  fastLoadEdgeList(path, edges, allNodes);
+
+  for(const edge& e : edges){
+    allNodes.insert(e.a);
+    allNodes.insert(e.b);
+  }
+  return order;
+}

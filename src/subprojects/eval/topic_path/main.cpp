@@ -116,7 +116,7 @@ int main(int argc, char ** argv){
       vout << "Getting Centralities" << endl;
       // networkit graph with n nodes, weighted and undirected
       NetworKit::Graph nkGraph(0, true, false);
-      for(unsigned int i = 0; i < graph.getNodeCount(); ++i){
+      for(unsigned int i = 0; i < graph.numNodes(); ++i){
         nkGraph.addNode();
       }
       // add graph to NK representation

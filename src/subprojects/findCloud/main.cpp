@@ -27,21 +27,6 @@ bool verbose = false;
 
 using namespace std;
 
-unsigned int loadAnotherOrderNeighbors(const string& path,
-                                       list<edge>& edges,
-                                       unordered_set<nodeIdx>& allNodes){
-  static unsigned int order = 0;
-  order += 1;
-
-  vout << "Loading " << order << "-order neighbors from " << path << endl;
-  fastLoadEdgeList(path, edges, allNodes);
-
-  for(const edge& e : edges){
-    allNodes.insert(e.a);
-    allNodes.insert(e.b);
-  }
-  return order;
-}
 
 
 int main (int argc, char** argv){
@@ -94,12 +79,12 @@ int main (int argc, char** argv){
   do{
 
     edges.clear();
+    vout << "Loading " << cycleCount + 1 << "-order neighbors" << endl;
     cycleCount = loadAnotherOrderNeighbors(graphPath, edges, allNodes);
 
     vout << "constructing graph" << endl;
-    for(const edge& e : edges){
+    for(const auto & e : edges)
       g.addEdge(e);
-    }
 
     vout << "Found " << g.numNodes() << " nodes" << endl;
     vout << "Found " << g.numEdges() << " edges" << endl;

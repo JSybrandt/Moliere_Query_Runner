@@ -27,6 +27,11 @@ class Graph{
 public:
   unsigned int numNodes() const { return data.size();}
   unsigned int numEdges() const { return edgeCount;}
+  void addEdges(const list<edge>& edges){
+    for(const edge& e : edges){
+      addEdge(e.a, e.b, e.weight);
+    }
+  }
   void addEdge(nodeIdx a, nodeIdx b, float weight){
     //if(weight < 0)
       //throw runtime_error("Invalid edge");
@@ -42,7 +47,7 @@ public:
     float weight;
   };
 
-  unordered_set<nodeIdx> getNeighbors(nodeIdx source, unsigned int n){
+  unordered_set<nodeIdx> getNeighbors(nodeIdx source, unsigned int n) const{
     unordered_set<nodeIdx> visited;
     pQueue<nodeIdx, float> pq;
     pq.push(source, 0);
@@ -139,7 +144,14 @@ public:
 
   friend ostream& operator<<(ostream& out, const Graph& g);
 
-  unsigned int getNodeCount(){return data.size();}
+  unordered_set<nodeIdx> getNodes() const {
+    unordered_set<nodeIdx> res;
+    res.reserve(data.size());
+    for(const auto & p : data){
+      res.insert(p.first);
+    }
+    return res;
+  }
 private:
   typedef pair<nodeIdx, float> halfEdge; // half edge only has one node
 

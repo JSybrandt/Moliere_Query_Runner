@@ -213,16 +213,16 @@ int main (int argc, char** argv){
 
   list<edge> edges;
 
-  unordered_set<nodeIdx> keys;
+  unordered_set<nodeIdx> allNodes;
   for(const auto & pair : word2vecList){
     if(label2idx.find(pair.first) != label2idx.end()){
-      keys.insert(label2idx.at(pair.first));
+      allNodes.insert(label2idx.at(pair.first));
     } else {
       vout << "Failed to find vector for:" << pair.first << endl;
     }
   }
 
-  fastLoadEdgeList(graphPath, edges, keys);
+  fastLoadEdgeList(graphPath, edges, allNodes);
 
   Graph graph;
   for(edge e : edges){
@@ -236,7 +236,20 @@ int main (int argc, char** argv){
 
   vout << "Getting shortest path." << endl;
 
+
   Graph::Path path = graph.getShortestPath(label2idx[sourceLbl], label2idx[targetLbl]);
+  unsigned int retryCount = 0;
+  while(path.path.size() == 0 && retryCount < 5){
+    retryCount += 1;
+    vout << "FAILED, restarting: " << retryCount << endl;
+    edges.clear();
+    vout << "Loading..." << endl;
+    loadAnotherOrderNeighbors(graphPath, edges, allNodes);
+    vout << "Building..." << endl;
+    graph.addEdges(edges);
+    vout << "Finding Path" << endl;
+    path = graph.getShortestPath(label2idx[sourceLbl], label2idx[targetLbl]);
+  }
 
   if(path.path.size() == 0){
     throw runtime_error("Failed to connect words in subnetwork");

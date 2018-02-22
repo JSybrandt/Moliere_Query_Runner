@@ -28,21 +28,24 @@ unordered_set<string> stopwords {
 "any", "are", "as", "at", "be", "because", "been",
 "being", "both", "but", "by", "cannot", "could",
 "did", "do", "does", "doing", "during", "each",
-"few", "for", "from", "further", "had", "has",
+"few", "fig", "for", "from", "further", "had", "has",
 "have", "having", "he", "her", "here", "hers",
 "herself", "him", "himself", "his", "how", "i",
 "if", "in", "into", "is", "it", "its", "itself",
 "me", "most", "my", "myself", "no", "nor", "not",
-"of", "off", "on", "once", "only", "or", "other",
+"of", "off", "on", "once", "one", "only", "or", "other",
 "ought", "our", "ours", "ourselves", "out", "over",
 "own", "same", "she", "should", "so", "some", "such",
 "than", "that", "the", "their", "theirs", "them",
 "themselves", "then", "there", "these", "they",
-"this", "those", "through", "to", "too", "until", "up",
-"very", "was", "we", "well", "were", "what", "when",
+"this", "those", "through", "to", "too", "two", "until", "up",
+"very", "wa", "was", "we", "well", "were", "what", "when",
 "where", "which", "while", "who", "whom", "why", "with",
 "would", "you", "your", "yours", "yourself", "yourselves",
 "0","1","2","3","4","5","6","7","8","9",
+"a","b","c","d","e","f","g","h","i","j",
+"a","b","c","d","e","f","g","h","i","j",
+"u","v","w","x","y","z"
 };
 
 string abstractLine2Bow(string line){
